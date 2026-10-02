@@ -6,5 +6,3 @@ CREATE TABLE IF NOT EXISTS scores (
     fraud_flag     INTEGER NOT NULL,
     created_at     TIMESTAMP DEFAULT now()
 );
-
-CREATE INDEX IF NOT EXISTS idx_scores_fraud_flag ON scores (fraud_flag);

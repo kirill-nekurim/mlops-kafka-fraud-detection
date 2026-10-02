@@ -97,8 +97,10 @@ pip install catboost==1.2.8 pandas==2.2.3 scikit-learn
 python train/train_model.py
 ```
 
-Для обучения используется `data/train.csv` — подвыборка из train соревнования
+Для обучения используется `data/train.csv` — подвыборка (~19k строк) из train соревнования, взята из
+публичного репозитория https://github.com/Nik-optimase/teta-kafka-clickhouse
 (полный train.csv можно скачать с Kaggle и положить на его место).
+`data/test_sample.csv` — 1000 отложенных строк из той же выборки без колонки `target`.
 
 ## Структура
 

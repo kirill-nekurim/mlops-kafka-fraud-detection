@@ -1,9 +1,5 @@
-import logging
-
 import numpy as np
 import pandas as pd
-
-logger = logging.getLogger(__name__)
 
 # категориальные признаки, catboost сам их закодирует
 CAT_FEATURES = ['merch', 'cat_id', 'gender', 'one_city', 'us_state', 'jobs']
@@ -40,5 +36,4 @@ def run_preproc(df):
     for col in CAT_FEATURES:
         df[col] = df[col].fillna('NAN').astype(str)
 
-    logger.debug('Preprocessing done, shape: %s', df[FEATURES].shape)
     return df[FEATURES]
