@@ -54,7 +54,7 @@ services:
 
   # база для хранения скоров, таблица создается из init.sql
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
