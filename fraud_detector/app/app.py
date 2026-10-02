@@ -6,6 +6,7 @@ import sys
 import pandas as pd
 from confluent_kafka import Consumer, Producer
 
+# чтобы импортировать модули из src
 sys.path.append(os.path.abspath('./src'))
 from preprocessing import run_preproc
 from scorer import make_pred
@@ -13,6 +14,7 @@ from scorer import make_pred
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('fraud_detector')
 
+# настройки берем из переменных окружения (см. docker-compose.yml)
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092')
 TRANSACTIONS_TOPIC = os.getenv('KAFKA_TRANSACTIONS_TOPIC', 'transactions')
 SCORES_TOPIC = os.getenv('KAFKA_SCORES_TOPIC', 'scores')
@@ -51,6 +53,7 @@ def main():
                 'score': float(pred['score']),
                 'fraud_flag': int(pred['fraud_flag']),
             }
+            # отправляем результат в топик scores
             producer.produce(SCORES_TOPIC, key=transaction_id, value=json.dumps(result))
             producer.poll(0)
             logger.info('Scored %s: %.4f (fraud=%d)', transaction_id, result['score'], result['fraud_flag'])

@@ -5,6 +5,7 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
+  # брокер сообщений
   kafka:
     image: confluentinc/cp-kafka:7.3.0
     depends_on:
@@ -40,6 +41,7 @@ services:
       kafka-topics --bootstrap-server kafka:9092 --list
       "
 
+  # веб-интерфейс для просмотра топиков
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     depends_on:
@@ -50,6 +52,7 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
 
+  # база для хранения скоров, таблица создается из init.sql
   postgres:
     image: postgres:16
     environment:
@@ -65,6 +68,7 @@ services:
       timeout: 5s
       retries: 10
 
+  # сервис скоринга: transactions -> scores
   fraud_detector:
     build: ./fraud_detector
     restart: on-failure
@@ -76,6 +80,7 @@ services:
       kafka-setup:
         condition: service_completed_successfully
 
+  # сервис записи скоров из топика scores в postgres
   db_writer:
     build: ./db_writer
     restart: on-failure
@@ -89,6 +94,7 @@ services:
       postgres:
         condition: service_healthy
 
+  # streamlit UI
   interface:
     build: ./interface
     restart: on-failure

@@ -35,6 +35,7 @@ def send_to_kafka(df):
 
 
 def query_db(sql):
+    """Выполняем запрос к Postgres и возвращаем DataFrame"""
     with psycopg2.connect(DB_URL) as conn:
         return pd.read_sql(sql, conn)
 
@@ -42,6 +43,7 @@ def query_db(sql):
 st.set_page_config(page_title='Fraud detection', page_icon='💳')
 st.title('💳 Детекция фродовых транзакций')
 
+# две вкладки: отправка данных и просмотр результатов
 tab_send, tab_results = st.tabs(['📤 Отправка транзакций', '📊 Результаты'])
 
 with tab_send:
@@ -62,6 +64,7 @@ with tab_send:
 with tab_results:
     if st.button('Посмотреть результаты'):
         try:
+            # 10 последних транзакций с флагом фрода
             frauds = query_db("""
                 SELECT transaction_id, score, fraud_flag, created_at
                 FROM scores
@@ -69,6 +72,7 @@ with tab_results:
                 ORDER BY id DESC
                 LIMIT 10
             """)
+            # скоры последних 100 транзакций для гистограммы
             last_100 = query_db('SELECT score FROM scores ORDER BY id DESC LIMIT 100')
 
             st.subheader('10 последних фродовых транзакций')

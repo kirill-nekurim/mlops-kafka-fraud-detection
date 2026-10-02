@@ -9,10 +9,12 @@ from confluent_kafka import Consumer
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('db_writer')
 
+# настройки берем из переменных окружения (см. docker-compose.yml)
 KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092')
 SCORES_TOPIC = os.getenv('KAFKA_SCORES_TOPIC', 'scores')
 DB_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@postgres:5432/fraud')
 
+# если такая транзакция уже есть в базе - пропускаем
 INSERT_SQL = """
     INSERT INTO scores (transaction_id, score, fraud_flag)
     VALUES (%s, %s, %s)
@@ -35,6 +37,7 @@ def main():
     conn = connect_db()
     conn.autocommit = True
 
+    # подписываемся на топик со скорами
     consumer = Consumer({
         'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
         'group.id': 'db-writer',
@@ -52,6 +55,7 @@ def main():
             continue
 
         try:
+            # сообщение: {"transaction_id": ..., "score": ..., "fraud_flag": ...}
             data = json.loads(msg.value().decode('utf-8'))
             with conn.cursor() as cur:
                 cur.execute(INSERT_SQL, (data['transaction_id'], data['score'], data['fraud_flag']))
