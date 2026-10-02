@@ -42,8 +42,8 @@
 Требуется Docker и Docker Compose v2.
 
 ```bash
-git clone https://github.com/kirill-nekurim/mlops-hw1-kafka-fraud-detection.git
-cd mlops-hw1-kafka-fraud-detection
+git clone https://github.com/kirill-nekurim/mlops-kafka-fraud-detection.git
+cd mlops-kafka-fraud-detection
 docker compose up --build -d
 ```
 
