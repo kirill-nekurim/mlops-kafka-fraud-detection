@@ -6,3 +6,9 @@ venv/
 .idea/
 .vscode/
 catboost_info/
+
+# артефакты, которые пишут DAG и сервис скоринга
+artifacts/models/*
+artifacts/dq_reports/*
+!artifacts/models/.gitkeep
+!artifacts/dq_reports/.gitkeep

@@ -1,0 +1,19 @@
+{
+  "version": "initial",
+  "threshold": 0.28,
+  "train_months": [
+    "2019-01",
+    "2019-02",
+    "2019-03"
+  ],
+  "test_month": "2019-04",
+  "train_rows": 3205,
+  "val_rows": 641,
+  "val_frauds": 5,
+  "val_pr_auc": 0.42272727272727273,
+  "val_f1": 0.5882352941176471,
+  "test_metrics": {
+    "pr_auc": 0.32775142878863245,
+    "roc_auc": 0.7685408299866131
+  }
+}

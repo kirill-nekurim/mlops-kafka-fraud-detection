@@ -66,14 +66,27 @@ with tab_results:
         try:
             # 10 последних транзакций с флагом фрода
             frauds = query_db("""
-                SELECT transaction_id, score, fraud_flag, created_at
+                SELECT transaction_id, score, fraud_flag, model_version, created_at
                 FROM scores
                 WHERE fraud_flag = 1
                 ORDER BY id DESC
                 LIMIT 10
             """)
+            # какими версиями модели скорились транзакции
+            versions = query_db("""
+                SELECT model_version, count(*) AS transactions, max(created_at) AS last_scored_at
+                FROM scores
+                GROUP BY model_version
+                ORDER BY last_scored_at DESC
+            """)
             # скоры последних 100 транзакций для гистограммы
             last_100 = query_db('SELECT score FROM scores ORDER BY id DESC LIMIT 100')
+
+            st.subheader('Версии модели')
+            if versions.empty:
+                st.info('В базе пока нет транзакций')
+            else:
+                st.dataframe(versions, use_container_width=True)
 
             st.subheader('10 последних фродовых транзакций')
             if frauds.empty:

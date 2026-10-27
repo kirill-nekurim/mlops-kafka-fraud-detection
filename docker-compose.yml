@@ -1,9 +1,22 @@
+# параметры пайплайна переобучения: общие для data_loader и airflow
+x-pipeline-env: &pipeline-env
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: fraud
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  WINDOW_MONTHS: "4"
+  INITIAL_WINDOW_START: "2019-01-01"
+  SUPPLY_BATCH_SIZE: "3000"
+  HISTORY_MONTHS: "24"
+
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_HEAP_OPTS: "-Xms128m -Xmx256m"
 
   # брокер сообщений
   kafka:
@@ -20,6 +33,7 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
     healthcheck:
       test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
       interval: 5s
@@ -43,7 +57,7 @@ services:
 
   # веб-интерфейс для просмотра топиков
   kafka-ui:
-    image: provectuslabs/kafka-ui:latest
+    image: provectuslabs/kafka-ui:v0.7.2
     depends_on:
       - kafka
     ports:
@@ -52,13 +66,15 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
 
-  # база для хранения скоров, таблица создается из init.sql
+  # база: скоры, размеченная витрина и состояние окна обучения (схема в init.sql)
   postgres:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: fraud
+    ports:
+      - "5432:5432"
     volumes:
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - pg_data:/var/lib/postgresql/data
@@ -68,7 +84,22 @@ services:
       timeout: 5s
       retries: 10
 
-  # сервис скоринга: transactions -> scores
+  # один раз заливает data/train.csv в витрину и готовит стартовое окно обучения
+  data_loader:
+    build: ./data_loader
+    restart: "no"
+    environment:
+      <<: *pipeline-env
+      LABELED_CSV_PATH: /data/train.csv
+      TRAINING_DATA_DIR: /training_data
+    volumes:
+      - ./data:/data:ro
+      - training_data:/training_data
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # сервис скоринга: transactions -> scores, модель читает из общего каталога /models
   fraud_detector:
     build: ./fraud_detector
     restart: on-failure
@@ -76,6 +107,9 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_TRANSACTIONS_TOPIC: transactions
       KAFKA_SCORES_TOPIC: scores
+      MODELS_DIR: /models
+    volumes:
+      - ./artifacts/models:/models
     depends_on:
       kafka-setup:
         condition: service_completed_successfully
@@ -110,5 +144,43 @@ services:
     ports:
       - "8501:8501"
 
+  # Airflow: DAG переобучения, поставки месяца и проверок качества данных
+  airflow:
+    build: ./airflow
+    restart: on-failure
+    environment:
+      <<: *pipeline-env
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "false"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow_state/airflow.db
+      AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: "30"
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "false"
+      PYTHONPATH: /opt/airflow
+      AIRFLOW_ADMIN_USER: admin
+      AIRFLOW_ADMIN_PASSWORD: admin
+      TRAINING_DATA_DIR: /opt/airflow/training_data
+      MODELS_DIR: /opt/airflow/models
+      DQ_REPORTS_DIR: /opt/airflow/dq_reports
+      FRAUD_SRC: /opt/airflow/fraud_src
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./pipeline:/opt/airflow/pipeline:ro
+      - ./fraud_detector/src:/opt/airflow/fraud_src:ro
+      - ./artifacts/models:/opt/airflow/models
+      - ./artifacts/dq_reports:/opt/airflow/dq_reports
+      - training_data:/opt/airflow/training_data
+      - airflow_state:/opt/airflow/airflow_state
+    ports:
+      - "${AIRFLOW_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      data_loader:
+        condition: service_completed_successfully
+
 volumes:
   pg_data:
+  training_data:
+  airflow_state:

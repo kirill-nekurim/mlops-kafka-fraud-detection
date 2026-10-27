@@ -1,50 +1,53 @@
 """
-Обучение легкой модели CatBoost (запускается локально один раз, в контейнере только inference).
+Обучение стартовой модели (версия initial), которая зашита в образ fraud_detector.
 
-    pip install catboost==1.2.8 pandas==2.2.3 scikit-learn
+Обучение идет тем же кодом, что и в DAG retrain_fraud_model, на стартовом окне:
+январь–март 2019 — train, апрель 2019 — test. Данных из более поздних месяцев модель
+не видит, поэтому ее честно можно сравнивать с моделями, которые обучит DAG.
+
+    pip install catboost==1.2.8 pandas scikit-learn pyarrow python-dateutil
     python train/train_model.py
 
-Сохраняет fraud_detector/models/model.cbm и threshold.json
+Сохраняет fraud_detector/models/model.cbm и model.json (порог и метрики).
 """
 import json
 import os
 import sys
 
-import numpy as np
 import pandas as pd
-from catboost import CatBoostClassifier
-from sklearn.metrics import f1_score, roc_auc_score
-from sklearn.model_selection import train_test_split
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(os.path.join(ROOT, 'fraud_detector', 'src'))
-from preprocessing import CAT_FEATURES, run_preproc
+sys.path.insert(0, ROOT)
+sys.path.insert(0, os.path.join(ROOT, 'fraud_detector', 'src'))
+from pipeline.retrain.clean_window import clean_frame  # noqa: E402
+from pipeline.retrain.train_challenger import fit_model  # noqa: E402
+from preprocessing import run_preproc  # noqa: E402
 
-train = pd.read_csv(os.path.join(ROOT, 'data', 'train.csv'))
-X = run_preproc(train)
-y = train['target']
+TRAIN_MONTHS = ['2019-01', '2019-02', '2019-03']
+TEST_MONTH = '2019-04'
 
-X_tr, X_val, y_tr, y_val = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
+df = pd.read_csv(os.path.join(ROOT, 'data', 'train.csv'))
+df, stats = clean_frame(df)
+print('Очистка:', stats)
+months = df['transaction_time'].dt.to_period('M').astype(str)
+train_raw = df[months.isin(TRAIN_MONTHS)].sort_values('transaction_time')
+test_raw = df[months == TEST_MONTH]
 
-model = CatBoostClassifier(
-    iterations=500,
-    depth=6,
-    learning_rate=0.05,
-    cat_features=CAT_FEATURES,
-    auto_class_weights='Balanced',
-    random_seed=42,
-    verbose=100,
-)
-model.fit(X_tr, y_tr, eval_set=(X_val, y_val))
+train = run_preproc(train_raw).assign(target=train_raw['target'].to_numpy())
+model, threshold, val_metrics = fit_model(train)
 
-# подбираем порог по f1 на валидации
-val_scores = model.predict_proba(X_val)[:, 1]
-thresholds = np.arange(0.05, 1.0, 0.01)
-f1s = [f1_score(y_val, val_scores > t) for t in thresholds]
-best_th = float(thresholds[int(np.argmax(f1s))])
-print(f'ROC-AUC: {roc_auc_score(y_val, val_scores):.4f}, best F1: {max(f1s):.4f} at threshold {best_th:.2f}')
+from sklearn.metrics import average_precision_score, roc_auc_score  # noqa: E402
+proba = model.predict_proba(run_preproc(test_raw))[:, 1]
+test_metrics = {
+    'pr_auc': float(average_precision_score(test_raw['target'], proba)),
+    'roc_auc': float(roc_auc_score(test_raw['target'], proba)),
+}
+print('Порог:', threshold, 'валидация:', val_metrics, 'test', TEST_MONTH, test_metrics)
 
-model.save_model(os.path.join(ROOT, 'fraud_detector', 'models', 'model.cbm'))
-with open(os.path.join(ROOT, 'fraud_detector', 'models', 'threshold.json'), 'w') as f:
-    json.dump({'threshold': round(best_th, 2)}, f)
+out = os.path.join(ROOT, 'fraud_detector', 'models')
+model.save_model(os.path.join(out, 'model.cbm'))
+with open(os.path.join(out, 'model.json'), 'w') as f:
+    json.dump({'version': 'initial', 'threshold': threshold, 'train_months': TRAIN_MONTHS,
+               'test_month': TEST_MONTH, 'train_rows': int(len(train)), **val_metrics,
+               'test_metrics': test_metrics}, f, ensure_ascii=False, indent=2)
 print('Model saved')

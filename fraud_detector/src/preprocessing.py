@@ -3,7 +3,7 @@ import pandas as pd
 
 # категориальные признаки, catboost сам их закодирует
 CAT_FEATURES = ['merch', 'cat_id', 'gender', 'one_city', 'us_state', 'jobs']
-NUM_FEATURES = ['amount_log', 'population_log', 'distance', 'hour', 'day_of_week', 'month']
+NUM_FEATURES = ['amount_log', 'population_log', 'distance', 'hour', 'day_of_week', 'month', 'is_night', 'is_weekend']
 FEATURES = CAT_FEATURES + NUM_FEATURES
 
 
@@ -22,6 +22,9 @@ def run_preproc(df):
     df['hour'] = t.dt.hour
     df['day_of_week'] = t.dt.dayofweek
     df['month'] = t.dt.month
+    # ночные и выходные операции чаще бывают фродовыми
+    df['is_night'] = ((df['hour'] < 6) | (df['hour'] >= 22)).astype(int)
+    df['is_weekend'] = (df['day_of_week'] >= 5).astype(int)
 
     # гео признак
     for col in ['lat', 'lon', 'merchant_lat', 'merchant_lon']:

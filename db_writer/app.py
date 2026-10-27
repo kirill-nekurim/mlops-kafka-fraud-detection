@@ -16,8 +16,8 @@ DB_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@postgres:5432
 
 # если такая транзакция уже есть в базе - пропускаем
 INSERT_SQL = """
-    INSERT INTO scores (transaction_id, score, fraud_flag)
-    VALUES (%s, %s, %s)
+    INSERT INTO scores (transaction_id, score, fraud_flag, model_version)
+    VALUES (%s, %s, %s, %s)
     ON CONFLICT (transaction_id) DO NOTHING
 """
 
@@ -55,10 +55,11 @@ def main():
             continue
 
         try:
-            # сообщение: {"transaction_id": ..., "score": ..., "fraud_flag": ...}
+            # сообщение: {"transaction_id": ..., "score": ..., "fraud_flag": ..., "model_version": ...}
             data = json.loads(msg.value().decode('utf-8'))
             with conn.cursor() as cur:
-                cur.execute(INSERT_SQL, (data['transaction_id'], data['score'], data['fraud_flag']))
+                cur.execute(INSERT_SQL, (data['transaction_id'], data['score'], data['fraud_flag'],
+                                         data.get('model_version', 'unknown')))
             logger.info('Saved %s', data['transaction_id'])
         except Exception as e:
             logger.error('Error saving message: %s', e)
