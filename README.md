@@ -234,7 +234,20 @@ docker compose exec postgres psql -U postgres -d fraud -c \
 ### 3. Скоринг опубликованной версией
 
 1. Открыть http://localhost:8501, вкладка **«Отправка транзакций»**, загрузить `data/test_sample.csv`
-   и нажать «Отправить в Kafka».
+   и нажать «Отправить в Kafka». То же без UI — первые 50 строк через producer в контейнере `interface`:
+
+```bash
+head -51 data/test_sample.csv | docker compose exec -T interface python -c "
+import sys, json, uuid, pandas as pd
+from kafka import KafkaProducer
+df = pd.read_csv(sys.stdin).astype(object)
+df = df.where(df.notna(), None)
+p = KafkaProducer(bootstrap_servers='kafka:9092', value_serializer=lambda v: json.dumps(v).encode())
+for _, r in df.iterrows():
+    p.send('transactions', value={'transaction_id': str(uuid.uuid4()), 'data': r.to_dict()})
+p.flush()"
+```
+
 2. Сравнить версию в результатах с `latest.txt`:
 
 ```bash
