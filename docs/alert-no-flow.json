@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Нет скоринга более 20 секунд",
+    "state": "firing",
+    "health": "ok",
+    "alerts": [
+      {
+        "labels": {
+          "alertname": "Нет скоринга более 20 секунд",
+          "grafana_folder": "Fraud Monitoring",
+          "service": "scorer",
+          "severity": "warning"
+        },
+        "annotations": {
+          "summary": "Проверьте генератор, Kafka и скорер"
+        },
+        "state": "Alerting",
+        "activeAt": "2026-11-14T18:08:10Z",
+        "value": "7.943063402175903e+01"
+      }
+    ]
+  },
+  {
+    "name": "Доля флага фрода выше 10%",
+    "state": "inactive",
+    "health": "ok",
+    "alerts": [
+      {
+        "labels": {
+          "alertname": "Доля флага фрода выше 10%",
+          "grafana_folder": "Fraud Monitoring",
+          "service": "scorer",
+          "severity": "warning"
+        },
+        "annotations": {
+          "summary": "Проверьте состав входящего потока и новую модель"
+        },
+        "state": "Normal",
+        "activeAt": "2026-11-14T18:05:00Z",
+        "value": ""
+      }
+    ]
+  }
+]

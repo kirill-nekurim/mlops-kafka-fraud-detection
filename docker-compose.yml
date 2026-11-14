@@ -1,72 +1,71 @@
-# параметры пайплайна переобучения: общие для data_loader и airflow
+# Стек мониторинга поверх ДЗ3. Все сервисы в общей сети compose.
 x-pipeline-env: &pipeline-env
   POSTGRES_HOST: postgres
-  POSTGRES_PORT: "5432"
+  POSTGRES_PORT: '5432'
   POSTGRES_DB: fraud
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: postgres
-  WINDOW_MONTHS: "4"
-  INITIAL_WINDOW_START: "2019-01-01"
-  SUPPLY_BATCH_SIZE: "3000"
-  HISTORY_MONTHS: "24"
-
+  WINDOW_MONTHS: '4'
+  INITIAL_WINDOW_START: '2019-01-01'
+  SUPPLY_BATCH_SIZE: '3000'
+  HISTORY_MONTHS: '24'
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
+    restart: unless-stopped
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-      KAFKA_HEAP_OPTS: "-Xms128m -Xmx256m"
-
-  # брокер сообщений
+      KAFKA_HEAP_OPTS: -Xms128m -Xmx256m
   kafka:
     image: confluentinc/cp-kafka:7.3.0
+    restart: unless-stopped
     depends_on:
-      - zookeeper
+    - zookeeper
     ports:
-      - "9095:9095"
+    - ${KAFKA_PORT:-9096}:9095
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9095
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:${KAFKA_PORT:-9096}
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_HEAP_OPTS: -Xms128m -Xmx512m
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9095
     healthcheck:
-      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      test:
+      - CMD-SHELL
+      - bash -ec 'echo > /dev/tcp/localhost/9092'
       interval: 5s
       timeout: 10s
       retries: 20
-
-  # создаем топики transactions и scores
   kafka-setup:
     image: confluentinc/cp-kafka:7.3.0
     depends_on:
       kafka:
         condition: service_healthy
     restart: on-failure
-    entrypoint: ["/bin/bash", "-c"]
-    command: |
-      "
+    entrypoint:
+    - /bin/bash
+    - -ec
+    command:
+    - |
       kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic transactions --partitions 3 --replication-factor 1
       kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic scores --partitions 3 --replication-factor 1
       kafka-topics --bootstrap-server kafka:9092 --list
-      "
-
-  # веб-интерфейс для просмотра топиков
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.2
+    restart: unless-stopped
     depends_on:
-      - kafka
+    - kafka
     ports:
-      - "8090:8080"
+    - ${KAFKA_UI_PORT:-8095}:8080
     environment:
+      JAVA_OPTS: -Xms32m -Xmx128m
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-
-  # база: скоры, размеченная витрина и состояние окна обучения (схема в init.sql)
   postgres:
     image: postgres:16-alpine
     environment:
@@ -74,32 +73,31 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: fraud
     ports:
-      - "5432:5432"
+    - ${POSTGRES_PORT:-5435}:5432
     volumes:
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - pg_data:/var/lib/postgresql/data
+    - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    - pg_data:/var/lib/postgresql/data
+    - ./db_writer/monitoring.sql:/docker-entrypoint-initdb.d/zz_monitoring.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d fraud"]
+      test:
+      - CMD-SHELL
+      - pg_isready -U postgres -d fraud
       interval: 5s
       timeout: 5s
       retries: 10
-
-  # один раз заливает data/train.csv в витрину и готовит стартовое окно обучения
   data_loader:
     build: ./data_loader
-    restart: "no"
+    restart: 'no'
     environment:
       <<: *pipeline-env
       LABELED_CSV_PATH: /data/train.csv
       TRAINING_DATA_DIR: /training_data
     volumes:
-      - ./data:/data:ro
-      - training_data:/training_data
+    - ./data:/data:ro
+    - training_data:/training_data
     depends_on:
       postgres:
         condition: service_healthy
-
-  # сервис скоринга: transactions -> scores, модель читает из общего каталога /models
   fraud_detector:
     build: ./fraud_detector
     restart: on-failure
@@ -109,12 +107,13 @@ services:
       KAFKA_SCORES_TOPIC: scores
       MODELS_DIR: /models
     volumes:
-      - ./artifacts/models:/models
+    - ./artifacts/models:/models
     depends_on:
       kafka-setup:
         condition: service_completed_successfully
-
-  # сервис записи скоров из топика scores в postgres
+    image: fraud-monitoring-scorer:local
+    ports:
+    - 127.0.0.1:${SCORER_METRICS_PORT:-18000}:8000
   db_writer:
     build: ./db_writer
     restart: on-failure
@@ -127,8 +126,8 @@ services:
         condition: service_completed_successfully
       postgres:
         condition: service_healthy
-
-  # streamlit UI
+    ports:
+    - 127.0.0.1:${WRITER_METRICS_PORT:-18001}:8001
   interface:
     build: ./interface
     restart: on-failure
@@ -142,21 +141,19 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "8501:8501"
-
-  # Airflow: DAG переобучения, поставки месяца и проверок качества данных
+    - ${STREAMLIT_PORT:-8505}:8501
   airflow:
     build: ./airflow
     restart: on-failure
     environment:
       <<: *pipeline-env
       AIRFLOW__CORE__EXECUTOR: SequentialExecutor
-      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "false"
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'false'
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow_state/airflow.db
-      AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: "30"
-      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "false"
+      AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: '30'
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'false'
       PYTHONPATH: /opt/airflow
       AIRFLOW_ADMIN_USER: admin
       AIRFLOW_ADMIN_PASSWORD: admin
@@ -164,23 +161,88 @@ services:
       MODELS_DIR: /opt/airflow/models
       DQ_REPORTS_DIR: /opt/airflow/dq_reports
       FRAUD_SRC: /opt/airflow/fraud_src
+      AIRFLOW__WEBSERVER__WORKERS: '1'
     volumes:
-      - ./dags:/opt/airflow/dags
-      - ./pipeline:/opt/airflow/pipeline:ro
-      - ./fraud_detector/src:/opt/airflow/fraud_src:ro
-      - ./artifacts/models:/opt/airflow/models
-      - ./artifacts/dq_reports:/opt/airflow/dq_reports
-      - training_data:/opt/airflow/training_data
-      - airflow_state:/opt/airflow/airflow_state
+    - ./dags:/opt/airflow/dags
+    - ./pipeline:/opt/airflow/pipeline:ro
+    - ./fraud_detector/src:/opt/airflow/fraud_src:ro
+    - ./artifacts/models:/opt/airflow/models
+    - ./artifacts/dq_reports:/opt/airflow/dq_reports
+    - training_data:/opt/airflow/training_data
+    - airflow_state:/opt/airflow/airflow_state
     ports:
-      - "${AIRFLOW_PORT:-8080}:8080"
+    - ${AIRFLOW_PORT:-8085}:8080
     depends_on:
       postgres:
         condition: service_healthy
       data_loader:
         condition: service_completed_successfully
-
+  simulator:
+    image: fraud-monitoring-scorer:local
+    command:
+    - python
+    - -u
+    - /simulator/app.py
+    restart: on-failure
+    environment:
+      TPS: ${TPS:-5}
+      MODE: ${SIMULATOR_MODE:-normal}
+    volumes:
+    - ./simulator:/simulator:ro
+    - ./data:/data:ro
+    depends_on:
+      kafka-setup:
+        condition: service_completed_successfully
+      fraud_detector:
+        condition: service_started
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    ports:
+    - 127.0.0.1:${PROMETHEUS_PORT:-9090}:9090
+    volumes:
+    - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    - prometheus_data:/prometheus
+    command:
+    - --config.file=/etc/prometheus/prometheus.yml
+    - --storage.tsdb.retention.time=2d
+    restart: unless-stopped
+  grafana:
+    image: grafana/grafana:11.6.0
+    ports:
+    - 127.0.0.1:${GRAFANA_PORT:-3000}:3000
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_DASHBOARDS_MIN_REFRESH_INTERVAL: 1s
+      GF_UNIFIED_ALERTING_MIN_INTERVAL: 10s
+      GF_PLUGINS_PREINSTALL_DISABLED: 'true'
+      GF_PLUGINS_DISABLE_PLUGINS: grafana-lokiexplore-app
+    volumes:
+    - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    - grafana_data:/var/lib/grafana
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db_writer:
+        condition: service_started
+      prometheus:
+        condition: service_started
+    restart: unless-stopped
+  node-exporter:
+    image: prom/node-exporter:v1.9.0
+    pid: host
+    command:
+    - --path.rootfs=/host
+    - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+)($|/)
+    volumes:
+    - /:/host:ro
+    restart: unless-stopped
 volumes:
-  pg_data:
-  training_data:
-  airflow_state:
+  pg_data: null
+  training_data: null
+  airflow_state: null
+  prometheus_data: null
+  grafana_data: null
+name: fraud-monitoring-hw5

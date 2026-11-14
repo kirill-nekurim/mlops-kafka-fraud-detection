@@ -1,0 +1,28 @@
+{
+  "dag_run": {
+    "dag_id": "retrain_fraud_model",
+    "run_id": "monitoring_hot_reload",
+    "state": "success",
+    "execution_date": "2026-11-14T18:12:26+00:00",
+    "start_date": "2026-11-14T18:12:27.453008+00:00",
+    "end_date": "2026-11-14T18:12:43.131019+00:00"
+  },
+  "published_version": "201907_20261114T181237",
+  "container_restart_count": 0,
+  "container_started_at_before": "2026-11-14T18:04:50.473426263Z",
+  "container_started_at_after": "2026-11-14T18:04:50.473426263Z",
+  "annotation_series": [
+    {
+      "version": "201907_20261114T181237",
+      "first": 1794679962.077,
+      "last": 1794679991.077,
+      "samples": 30
+    },
+    {
+      "version": "initial",
+      "first": 1794679496.077,
+      "last": 1794679524.077,
+      "samples": 29
+    }
+  ]
+}

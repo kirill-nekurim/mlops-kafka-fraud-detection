@@ -1,0 +1,289 @@
+{
+  "result": "PASS",
+  "checked_at": "2026-11-14T18:44:56Z",
+  "configured_memory_mib": 5120,
+  "docker_mem_total_bytes": 5157445632,
+  "run_id": "monitoring_5gb_20261114T184356",
+  "dag": {
+    "run": [
+      "success",
+      "2026-11-14 18:43:59.011031",
+      "2026-11-14 18:44:11.948135"
+    ],
+    "publication": {
+      "batch_month": "2020-02-01",
+      "work_dir": "/opt/airflow/training_data/work/202002",
+      "train_raw_path": "/opt/airflow/training_data/work/202002/train_raw.parquet",
+      "test_raw_path": "/opt/airflow/training_data/work/202002/test_raw.parquet",
+      "train_months": [
+        "2019-11",
+        "2019-12",
+        "2020-01"
+      ],
+      "test_month": "2020-02",
+      "train_features_path": "/opt/airflow/training_data/work/202002/train_features.parquet",
+      "test_features_path": "/opt/airflow/training_data/work/202002/test_features.parquet",
+      "version": "202002_20261114T184407",
+      "candidate_path": "/opt/airflow/models/candidates/model_202002_20261114T184407.cbm",
+      "publish": true,
+      "reason": "force_publish=true (PR-AUC challenger ниже, чем у прод-модели)",
+      "test_metrics": {
+        "test_rows": 869,
+        "test_frauds": 10,
+        "f1": 0.625,
+        "pr_auc": 0.7470574285811512,
+        "roc_auc": 0.9830034924330616
+      },
+      "published_version": "202002_20261114T184407"
+    }
+  },
+  "published_version": "202002_20261114T184407",
+  "new_version_scores": 45,
+  "annotation_samples": 29,
+  "duration_seconds": 60.0,
+  "healthy_observations": 3,
+  "containers_before": {
+    "airflow": {
+      "id": "b9c8d7522107",
+      "state": "running",
+      "started_at": "2026-11-14T18:43:02.65212575Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "data_loader": {
+      "id": "2fdc687a078d",
+      "state": "exited",
+      "started_at": "2026-11-14T18:43:01.563254125Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "db_writer": {
+      "id": "b238cd0390a4",
+      "state": "running",
+      "started_at": "2026-11-14T18:43:04.745260418Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "fraud_detector": {
+      "id": "4e60cd222ad5",
+      "state": "running",
+      "started_at": "2026-11-14T18:43:04.746661834Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "grafana": {
+      "id": "010626e13285",
+      "state": "running",
+      "started_at": "2026-11-14T18:43:05.346196751Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "interface": {
+      "id": "94cb6623e595",
+      "state": "running",
+      "started_at": "2026-11-14T18:43:04.746480043Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "kafka": {
+      "id": "b681895ef0ff",
+      "state": "running",
+      "started_at": "2026-11-14T18:42:56.044257386Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "kafka-setup": {
+      "id": "b43bd17ed353",
+      "state": "exited",
+      "started_at": "2026-11-14T18:43:01.649279083Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "kafka-ui": {
+      "id": "f36713117659",
+      "state": "running",
+      "started_at": "2026-11-14T18:42:56.155136136Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "node-exporter": {
+      "id": "3685a1eb7670",
+      "state": "running",
+      "started_at": "2026-11-14T18:42:55.867060136Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "postgres": {
+      "id": "57d0af495256",
+      "state": "running",
+      "started_at": "2026-11-14T18:42:55.876268386Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "prometheus": {
+      "id": "f14bce333efe",
+      "state": "running",
+      "started_at": "2026-11-14T18:42:55.883015053Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "simulator": {
+      "id": "7ea14a288af3",
+      "state": "running",
+      "started_at": "2026-11-14T18:43:05.353692751Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "zookeeper": {
+      "id": "5915406ffe1b",
+      "state": "running",
+      "started_at": "2026-11-14T18:42:55.860904469Z",
+      "restarts": 0,
+      "oom_killed": false
+    }
+  },
+  "containers_after": {
+    "airflow": {
+      "id": "b9c8d7522107",
+      "state": "running",
+      "started_at": "2026-11-14T18:43:02.65212575Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "data_loader": {
+      "id": "2fdc687a078d",
+      "state": "exited",
+      "started_at": "2026-11-14T18:43:01.563254125Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "db_writer": {
+      "id": "b238cd0390a4",
+      "state": "running",
+      "started_at": "2026-11-14T18:43:04.745260418Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "fraud_detector": {
+      "id": "4e60cd222ad5",
+      "state": "running",
+      "started_at": "2026-11-14T18:43:04.746661834Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "grafana": {
+      "id": "010626e13285",
+      "state": "running",
+      "started_at": "2026-11-14T18:43:05.346196751Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "interface": {
+      "id": "94cb6623e595",
+      "state": "running",
+      "started_at": "2026-11-14T18:43:04.746480043Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "kafka": {
+      "id": "b681895ef0ff",
+      "state": "running",
+      "started_at": "2026-11-14T18:42:56.044257386Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "kafka-setup": {
+      "id": "b43bd17ed353",
+      "state": "exited",
+      "started_at": "2026-11-14T18:43:01.649279083Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "kafka-ui": {
+      "id": "f36713117659",
+      "state": "running",
+      "started_at": "2026-11-14T18:42:56.155136136Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "node-exporter": {
+      "id": "3685a1eb7670",
+      "state": "running",
+      "started_at": "2026-11-14T18:42:55.867060136Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "postgres": {
+      "id": "57d0af495256",
+      "state": "running",
+      "started_at": "2026-11-14T18:42:55.876268386Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "prometheus": {
+      "id": "f14bce333efe",
+      "state": "running",
+      "started_at": "2026-11-14T18:42:55.883015053Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "simulator": {
+      "id": "7ea14a288af3",
+      "state": "running",
+      "started_at": "2026-11-14T18:43:05.353692751Z",
+      "restarts": 0,
+      "oom_killed": false
+    },
+    "zookeeper": {
+      "id": "5915406ffe1b",
+      "state": "running",
+      "started_at": "2026-11-14T18:42:55.860904469Z",
+      "restarts": 0,
+      "oom_killed": false
+    }
+  },
+  "http_before": {
+    "airflow": {
+      "status": 200,
+      "body": "{\"dag_processor\": {\"latest_dag_processor_heartbeat\": null, \"status\": null}, \"metadatabase\": {\"status\": \"healthy\"}, \"scheduler\": {\"latest_scheduler_heartbeat\": \"2026-11-14T18:43:50.875893+00:00\", \"status\": \"healthy\"}, \"triggerer\": {\"latest_triggerer_heartbeat\": \"2026-11-14T18:43:51.736966+00:00\", \"status\": \"healthy\"}}"
+    },
+    "kafka_ui": {
+      "status": 200,
+      "body": "{\"status\":\"UP\"}"
+    },
+    "streamlit": {
+      "status": 200,
+      "body": "ok"
+    },
+    "prometheus": {
+      "status": 200,
+      "body": "Prometheus Server is Healthy.\n"
+    },
+    "grafana": {
+      "status": 200,
+      "body": "{\n  \"database\": \"ok\",\n  \"version\": \"11.6.0\",\n  \"commit\": \"d2fdff9ee4d75c74bfd3a97c18a0b8e4d029f06e\"\n}"
+    }
+  },
+  "http_after": {
+    "airflow": {
+      "status": 200,
+      "body": "{\"dag_processor\": {\"latest_dag_processor_heartbeat\": null, \"status\": null}, \"metadatabase\": {\"status\": \"healthy\"}, \"scheduler\": {\"latest_scheduler_heartbeat\": \"2026-11-14T18:44:54.364440+00:00\", \"status\": \"healthy\"}, \"triggerer\": {\"latest_triggerer_heartbeat\": \"2026-11-14T18:44:52.511440+00:00\", \"status\": \"healthy\"}}"
+    },
+    "kafka_ui": {
+      "status": 200,
+      "body": "{\"status\":\"UP\"}"
+    },
+    "streamlit": {
+      "status": 200,
+      "body": "ok"
+    },
+    "prometheus": {
+      "status": 200,
+      "body": "Prometheus Server is Healthy.\n"
+    },
+    "grafana": {
+      "status": 200,
+      "body": "{\n  \"database\": \"ok\",\n  \"version\": \"11.6.0\",\n  \"commit\": \"d2fdff9ee4d75c74bfd3a97c18a0b8e4d029f06e\"\n}"
+    }
+  }
+}
