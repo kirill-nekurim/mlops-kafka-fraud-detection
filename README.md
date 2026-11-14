@@ -10,6 +10,10 @@
 Нужны Docker и Docker Compose v2. Для полного стека выделите Docker 4–6 ГБ памяти,
 особенно если одновременно работают другие проекты. Порты вынесены в `.env.example`.
 
+Полный стек с переобучением проверен при лимите Docker 5 ГБ: все 24 панели работают,
+новая модель загружается без перезапуска, OOM и рестартов сервисов в прогоне не было.
+Результаты — [docs/VALIDATION.md](docs/VALIDATION.md).
+
 ```bash
 git clone https://github.com/kirill-nekurim/mlops-kafka-fraud-detection.git
 cd mlops-kafka-fraud-detection

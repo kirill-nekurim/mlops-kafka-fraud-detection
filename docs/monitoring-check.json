@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-14T18:35:06Z",
+  "checked_at": "2026-11-14T18:45:01Z",
   "targets": [
     "node",
     "scorer",
@@ -44,8 +44,8 @@
     "Сумма подозрительных операций по времени"
   ],
   "totals": {
-    "scores": 6449,
-    "versions": 5,
+    "scores": 7387,
+    "versions": 7,
     "missing": 0
   },
   "alert_rules": [

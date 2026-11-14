@@ -18,7 +18,9 @@
 
 Результаты и скриншоты: [docs/VALIDATION.md](https://github.com/kirill-nekurim/mlops-kafka-fraud-detection/blob/hw5-monitoring/docs/VALIDATION.md).
 Команды запуска и ручной проверки: [README.md](https://github.com/kirill-nekurim/mlops-kafka-fraud-detection/blob/hw5-monitoring/README.md).
-Kafka UI и Streamlit отвечают на health endpoints; Airflow отдельно вернул healthy.
-Для полного стека с переобучением нужен запас памяти Docker 4–6 ГБ: при текущих
-2.84 GiB полный длительный прогон не подтверждён. В README есть команда запуска
-без дополнительных интерфейсов; ограничение записано в отчёте проверки.
+Полный стек с Airflow, Kafka UI и Streamlit проверен при лимите Docker 5 ГБ.
+Во время реального переобучения все сервисы отвечали, OOM и рестартов не было.
+Новая версия записала скоры и создала аннотацию примерно на 30 секунд. После
+обучения повторно проверены все 24 панели и нормальное состояние алертов.
+Для запуска рекомендуется выделить Docker 4–6 ГБ; это функциональная проверка,
+а не длительный нагрузочный тест.

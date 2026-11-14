@@ -19,7 +19,7 @@
           "summary": "Проверьте генератор, Kafka и скорер"
         },
         "state": "Normal",
-        "activeAt": "2026-11-14T18:33:10Z",
+        "activeAt": "2026-11-14T18:36:10Z",
         "value": ""
       }
     ],
@@ -37,8 +37,8 @@
     },
     "health": "ok",
     "type": "alerting",
-    "lastEvaluation": "2026-11-14T18:34:20Z",
-    "evaluationTime": 0.006123471
+    "lastEvaluation": "2026-11-14T18:45:20Z",
+    "evaluationTime": 0.005133925
   },
   {
     "state": "inactive",
@@ -78,7 +78,7 @@
     },
     "health": "ok",
     "type": "alerting",
-    "lastEvaluation": "2026-11-14T18:34:10Z",
-    "evaluationTime": 5.012571968
+    "lastEvaluation": "2026-11-14T18:45:10Z",
+    "evaluationTime": 5.008828631
   }
 ]
