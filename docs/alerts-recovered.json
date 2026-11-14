@@ -1,0 +1,84 @@
+[
+  {
+    "state": "inactive",
+    "name": "Нет скоринга более 20 секунд",
+    "query": "time() - scorer_last_success_timestamp_seconds",
+    "duration": 10,
+    "annotations": {
+      "summary": "Проверьте генератор, Kafka и скорер"
+    },
+    "alerts": [
+      {
+        "labels": {
+          "alertname": "Нет скоринга более 20 секунд",
+          "grafana_folder": "Fraud Monitoring",
+          "service": "scorer",
+          "severity": "warning"
+        },
+        "annotations": {
+          "summary": "Проверьте генератор, Kafka и скорер"
+        },
+        "state": "Normal",
+        "activeAt": "2026-11-14T18:33:10Z",
+        "value": ""
+      }
+    ],
+    "totals": {
+      "normal": 1
+    },
+    "totalsFiltered": {
+      "normal": 1
+    },
+    "uid": "flow-stopped",
+    "folderUid": "ag4ar5p3sk268b",
+    "labels": {
+      "service": "scorer",
+      "severity": "warning"
+    },
+    "health": "ok",
+    "type": "alerting",
+    "lastEvaluation": "2026-11-14T18:34:20Z",
+    "evaluationTime": 0.006123471
+  },
+  {
+    "state": "inactive",
+    "name": "Доля флага фрода выше 10%",
+    "query": "sum(rate(scorer_fraud_total[30s])) / clamp_min(sum(rate(scorer_transactions_total[30s])), 0.01)",
+    "duration": 10,
+    "annotations": {
+      "summary": "Проверьте состав входящего потока и новую модель"
+    },
+    "alerts": [
+      {
+        "labels": {
+          "alertname": "Доля флага фрода выше 10%",
+          "grafana_folder": "Fraud Monitoring",
+          "service": "scorer",
+          "severity": "warning"
+        },
+        "annotations": {
+          "summary": "Проверьте состав входящего потока и новую модель"
+        },
+        "state": "Normal",
+        "activeAt": "2026-11-14T18:30:30Z",
+        "value": ""
+      }
+    ],
+    "totals": {
+      "normal": 1
+    },
+    "totalsFiltered": {
+      "normal": 1
+    },
+    "uid": "high-fraud",
+    "folderUid": "ag4ar5p3sk268b",
+    "labels": {
+      "service": "scorer",
+      "severity": "warning"
+    },
+    "health": "ok",
+    "type": "alerting",
+    "lastEvaluation": "2026-11-14T18:34:10Z",
+    "evaluationTime": 5.012571968
+  }
+]

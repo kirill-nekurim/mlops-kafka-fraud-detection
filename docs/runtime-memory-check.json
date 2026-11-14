@@ -1,0 +1,146 @@
+{
+  "checked_at": "2026-11-14T18:36:45Z",
+  "docker_memory_gib": 2.844,
+  "services": [
+    {
+      "name": "airflow",
+      "state": {
+        "Status": "running",
+        "Running": true,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": true,
+        "Dead": false,
+        "Pid": 49582,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-11-14T18:32:31.859314212Z",
+        "FinishedAt": "2026-11-14T18:30:33.739464172Z"
+      },
+      "restart_count": 0
+    },
+    {
+      "name": "kafka",
+      "state": {
+        "Status": "running",
+        "Running": true,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 53716,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-11-14T18:35:54.8016515Z",
+        "FinishedAt": "2026-11-14T18:35:54.574847959Z",
+        "Health": {
+          "Status": "healthy",
+          "FailingStreak": 0,
+          "Log": [
+            {
+              "Start": "2026-11-14T18:36:20.107078262Z",
+              "End": "2026-11-14T18:36:20.152509554Z",
+              "ExitCode": 0,
+              "Output": ""
+            },
+            {
+              "Start": "2026-11-14T18:36:25.155575667Z",
+              "End": "2026-11-14T18:36:25.186747459Z",
+              "ExitCode": 0,
+              "Output": ""
+            },
+            {
+              "Start": "2026-11-14T18:36:30.18868017Z",
+              "End": "2026-11-14T18:36:30.241876711Z",
+              "ExitCode": 0,
+              "Output": ""
+            },
+            {
+              "Start": "2026-11-14T18:36:35.244171505Z",
+              "End": "2026-11-14T18:36:35.29900888Z",
+              "ExitCode": 0,
+              "Output": ""
+            },
+            {
+              "Start": "2026-11-14T18:36:40.300100008Z",
+              "End": "2026-11-14T18:36:40.354903549Z",
+              "ExitCode": 0,
+              "Output": ""
+            }
+          ]
+        }
+      },
+      "restart_count": 3
+    },
+    {
+      "name": "kafka-ui",
+      "state": {
+        "Status": "running",
+        "Running": true,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 51174,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-11-14T18:33:53.457815375Z",
+        "FinishedAt": "2026-11-14T18:26:28.974457167Z"
+      },
+      "restart_count": 0
+    },
+    {
+      "name": "interface",
+      "state": {
+        "Status": "running",
+        "Running": true,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 51180,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-11-14T18:33:53.456368125Z",
+        "FinishedAt": "2026-11-14T18:26:28.515362291Z"
+      },
+      "restart_count": 0
+    },
+    {
+      "name": "fraud_detector",
+      "state": {
+        "Status": "running",
+        "Running": true,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 40974,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-11-14T18:21:34.807623005Z",
+        "FinishedAt": "0001-01-01T00:00:00Z"
+      },
+      "restart_count": 0
+    },
+    {
+      "name": "db_writer",
+      "state": {
+        "Status": "running",
+        "Running": true,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 40976,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-11-14T18:21:34.805775714Z",
+        "FinishedAt": "0001-01-01T00:00:00Z"
+      },
+      "restart_count": 0
+    }
+  ],
+  "result": "RESOURCE_LIMIT",
+  "note": "Individual functional checks passed; full-stack stability during scheduled training is not confirmed at this memory limit. Increase Docker memory to 4-6 GiB and repeat."
+}

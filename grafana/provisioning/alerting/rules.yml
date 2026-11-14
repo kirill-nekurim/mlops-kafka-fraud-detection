@@ -1,0 +1,102 @@
+apiVersion: 1
+groups:
+- orgId: 1
+  name: Fraud rules
+  folder: Fraud Monitoring
+  interval: 10s
+  rules:
+  - uid: flow-stopped
+    title: Нет скоринга более 20 секунд
+    condition: C
+    for: 10s
+    noDataState: Alerting
+    execErrState: Alerting
+    annotations:
+      summary: Проверьте генератор, Kafka и скорер
+    labels:
+      service: scorer
+      severity: warning
+    isPaused: false
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 60
+        to: 0
+      model:
+        refId: A
+        expr: time() - scorer_last_success_timestamp_seconds
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: classic_conditions
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 20
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+            params: []
+          type: query
+  - uid: high-fraud
+    title: Доля флага фрода выше 10%
+    condition: C
+    for: 10s
+    noDataState: Alerting
+    execErrState: Alerting
+    annotations:
+      summary: Проверьте состав входящего потока и новую модель
+    labels:
+      service: scorer
+      severity: warning
+    isPaused: false
+    data:
+    - refId: A
+      datasourceUid: prometheus
+      relativeTimeRange:
+        from: 60
+        to: 0
+      model:
+        refId: A
+        expr: sum(rate(scorer_fraud_total[30s])) / clamp_min(sum(rate(scorer_transactions_total[30s])),
+          0.01)
+        instant: true
+        range: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: classic_conditions
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 0.1
+          operator:
+            type: and
+          query:
+            params:
+            - A
+          reducer:
+            type: last
+            params: []
+          type: query

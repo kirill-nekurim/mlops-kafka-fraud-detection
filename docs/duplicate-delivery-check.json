@@ -1,0 +1,15 @@
+{
+  "transaction_id": "64c60d7a-cd91-43d2-82ee-9ecd280dd073",
+  "copies_replayed": 5,
+  "before": {
+    "writer_scores_total": 1291.0,
+    "writer_duplicates_total": 5.0,
+    "writer_score_count": 1291.0
+  },
+  "after": {
+    "writer_scores_total": 1291.0,
+    "writer_duplicates_total": 10.0,
+    "writer_score_count": 1291.0
+  },
+  "result": "PASS"
+}

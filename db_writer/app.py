@@ -2,67 +2,89 @@ import json
 import logging
 import os
 import time
+from datetime import datetime, timezone
+from pathlib import Path
 
 import psycopg2
 from confluent_kafka import Consumer
+from prometheus_client import start_http_server
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+from metrics import DELAY, DURATION, DUPLICATES, ERRORS, FRAUD, LAST_SUCCESS, SCORES, WRITTEN
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(name)s %(levelname)s %(message)s')
 logger = logging.getLogger('db_writer')
-
-# настройки берем из переменных окружения (см. docker-compose.yml)
-KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092')
-SCORES_TOPIC = os.getenv('KAFKA_SCORES_TOPIC', 'scores')
-DB_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@postgres:5432/fraud')
-
-# если такая транзакция уже есть в базе - пропускаем
 INSERT_SQL = """
-    INSERT INTO scores (transaction_id, score, fraud_flag, model_version)
-    VALUES (%s, %s, %s, %s)
+    INSERT INTO scores (transaction_id, score, fraud_flag, model_version,
+                        us_state, merch, cat_id, amount, scored_at, produced_at)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     ON CONFLICT (transaction_id) DO NOTHING
 """
 
 
 def connect_db():
-    # постгрес может подниматься чуть дольше, поэтому пробуем несколько раз
-    for _ in range(30):
+    while True:
         try:
-            return psycopg2.connect(DB_URL)
+            conn = psycopg2.connect(os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@postgres:5432/fraud'))
+            conn.autocommit = True
+            return conn
         except psycopg2.OperationalError:
-            logger.info('Postgres is not ready, retry...')
+            logger.warning('Postgres пока недоступен')
             time.sleep(2)
-    raise RuntimeError('Could not connect to Postgres')
 
 
 def main():
+    start_http_server(int(os.getenv('METRICS_PORT', '8001')))
     conn = connect_db()
-    conn.autocommit = True
-
-    # подписываемся на топик со скорами
+    with conn.cursor() as cur:
+        cur.execute(Path('monitoring.sql').read_text())
     consumer = Consumer({
-        'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
-        'group.id': 'db-writer',
-        'auto.offset.reset': 'earliest',
+        'bootstrap.servers': os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092'),
+        'group.id': 'db-writer', 'auto.offset.reset': 'earliest', 'enable.auto.commit': False,
     })
-    consumer.subscribe([SCORES_TOPIC])
-
-    logger.info('Reading topic "%s" and writing to Postgres...', SCORES_TOPIC)
+    consumer.subscribe([os.getenv('KAFKA_SCORES_TOPIC', 'scores')])
     while True:
-        msg = consumer.poll(1.0)
+        msg = consumer.poll(1)
         if msg is None:
             continue
         if msg.error():
-            logger.error('Kafka error: %s', msg.error())
+            ERRORS.inc()
             continue
-
         try:
-            # сообщение: {"transaction_id": ..., "score": ..., "fraud_flag": ..., "model_version": ...}
-            data = json.loads(msg.value().decode('utf-8'))
-            with conn.cursor() as cur:
-                cur.execute(INSERT_SQL, (data['transaction_id'], data['score'], data['fraud_flag'],
-                                         data.get('model_version', 'unknown')))
-            logger.info('Saved %s', data['transaction_id'])
-        except Exception as e:
-            logger.error('Error saving message: %s', e)
+            data = json.loads(msg.value())
+            values = (data['transaction_id'], data['score'], data['fraud_flag'],
+                      data.get('model_version', 'unknown'), data.get('us_state') or 'UNKNOWN',
+                      data.get('merch') or 'UNKNOWN', data.get('cat_id') or 'UNKNOWN',
+                      data.get('amount'), data.get('scored_at'), data.get('produced_at'))
+        except (ValueError, KeyError, TypeError):
+            ERRORS.inc()
+            logger.exception('Некорректный результат в Kafka')
+            consumer.commit(message=msg, asynchronous=False)
+            continue
+        while True:
+            try:
+                started = time.perf_counter()
+                with conn.cursor() as cur:
+                    cur.execute(INSERT_SQL, values)
+                    inserted = cur.rowcount == 1
+                DURATION.observe(time.perf_counter() - started)
+                if inserted:
+                    WRITTEN.inc()
+                    FRAUD.inc(data['fraud_flag'])
+                    SCORES.observe(data['score'])
+                    LAST_SUCCESS.set_to_current_time()
+                    if data.get('scored_at'):
+                        delay = datetime.now(timezone.utc) - datetime.fromisoformat(data['scored_at'])
+                        DELAY.observe(max(0, delay.total_seconds()))
+                else:
+                    DUPLICATES.inc()
+                consumer.commit(message=msg, asynchronous=False)
+                break
+            except psycopg2.Error:
+                ERRORS.inc()
+                logger.exception('Запись не прошла, offset не двигаем')
+                conn.close()
+                time.sleep(1)
+                conn = connect_db()
 
 
 if __name__ == '__main__':

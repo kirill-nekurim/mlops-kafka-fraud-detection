@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 from catboost import CatBoostClassifier
+from metrics import ACTIVE, LAST_RELOAD, LOAD_ERRORS, RELOADS
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,12 @@ def _current_model():
         model.load_model(str(MODELS_DIR / f'model_{version}.cbm'))
         with open(MODELS_DIR / f'model_{version}.json') as f:
             threshold = json.load(f)['threshold']
+        if _version is not None:
+            ACTIVE.labels(_version).set(0)
         _model, _version, _threshold = model, version, threshold
+        ACTIVE.labels(version).set(1)
+        RELOADS.labels(version).inc()
+        LAST_RELOAD.labels(version).set_to_current_time()
         logger.info('Загружена модель %s, порог %.2f', version, threshold)
     return _model, _version, _threshold
 
@@ -52,6 +58,7 @@ def make_pred(df):
     try:
         model, version, threshold = _current_model()
     except Exception:
+        LOAD_ERRORS.inc()
         # если новую модель прочитать не удалось, продолжаем скорить прежней
         if _model is None:
             raise

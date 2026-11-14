@@ -1,0 +1,11 @@
+{
+  "result": "PASS",
+  "fresh_init_columns": 12,
+  "grafana_reader_select": true,
+  "grafana_reader_insert": false,
+  "legacy_row_after_two_migrations": "legacy|UNKNOWN|UNKNOWN|UNKNOWN",
+  "init_order": [
+    "init.sql",
+    "zz_monitoring.sql"
+  ]
+}
